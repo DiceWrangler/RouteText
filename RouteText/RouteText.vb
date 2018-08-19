@@ -58,7 +58,7 @@ Module RouteText
 
 
     Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180704"
+    Const APP_VERSION As String = "v180819"
 
     Const EMAIL_TO_USE_LIVE As String = "LIVE"
     Const EMAIL_TO_USE_TEST As String = "TEST"
@@ -223,12 +223,10 @@ MAIN_EXIT:
 
         Dim lError As Integer = 0
         Dim lAnyError As Integer = 0
-        Dim lDataSource As String
 
         LogMessage(APP_NAME & ": Starting up (" & APP_VERSION & ")")
 
-        lDataSource = GetDataSource()
-        lError = DBOpen(lDataSource)
+        lError = DBOpen()
         If lError <> 0 Then lAnyError = -1 'If we cannot open the database, flag the error but keep going in case there are more errors during initialization
 
         lError = OutlookOpen()
@@ -255,46 +253,6 @@ MAIN_EXIT:
         DBClose()
 
     End Sub
-
-
-    Sub HelpArgs()
-
-        LogMessage("*** Unexpected commandline parameters ***")
-
-        LogMessage("Example usage to optionally specify a SQL Server database instance:")
-        LogMessage("  " & APP_NAME & " -S <instance name>")
-
-    End Sub
-
-
-    Function GetDataSource() As String
-
-        Dim lArgs As String()
-        Dim lDataSource As String
-
-        lArgs = Environment.GetCommandLineArgs()
-
-        lDataSource = ""
-
-        If lArgs.Count = 3 Then
-
-            If UCase(Left(lArgs(1), 2)) = "-S" Then
-                lDataSource = lArgs(2)
-            Else
-                Call HelpArgs()
-            End If
-
-        Else
-
-            If lArgs.Count <> 1 Then
-                Call HelpArgs()
-            End If
-
-        End If
-
-        GetDataSource = lDataSource
-
-    End Function
 
 
     Sub LoadAppConfigs()

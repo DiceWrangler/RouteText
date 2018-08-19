@@ -7,34 +7,22 @@ Module RouteTextDatabase
     Dim gDBConn As SqlConnection
 
 
-    Public Function DBOpen(pDataSource As String) As Integer
+    Public Function DBOpen() As Integer
 
         Dim lError As Integer = 0
-        Dim lConnStr As String
-        Dim lDataSource As String
-
-        If pDataSource = "" Then
-            lDataSource = "Data Source=localhost;"
-        Else
-            lDataSource = "Data Source=" & pDataSource & ";"
-        End If
-        LogMessage("Config: " & lDataSource)
-
-        '        lConnStr = "Initial Catalog=SendText;Integrated Security=SSPI;MultipleActiveResultSets=True;" & lDataSource
-
-        ' NOTE: pDataSource is being ignored; this needs to be re-written to get configurations from an external file not the command line
-        lConnStr = ConfigurationManager.ConnectionStrings("SendText").ConnectionString
+        Dim lConnectionString As String
 
         Try
 
-            gDBConn = New SqlConnection(lConnStr)
+            '            gDBConn = New SqlConnection("Initial Catalog=SendText;Data Source=localhost;Integrated Security=SSPI;MultipleActiveResultSets=True;")
+            lConnectionString = ConfigurationManager.ConnectionStrings("SendText").ConnectionString
+            gDBConn = New SqlConnection(lConnectionString)
             gDBConn.Open()
 
         Catch ex As Exception
 
             lError = -1 ' Flag failure to open database
             LogMessage("*** ERROR *** DBOpen: " & ex.ToString)
-            LogMessage("Connection String = " & lConnStr)
 
         End Try
 
@@ -59,6 +47,7 @@ Module RouteTextDatabase
             gDBConn = Nothing
 
         End Try
+
 
     End Sub
 
