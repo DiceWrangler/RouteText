@@ -7,13 +7,10 @@ Module RouteTextOutlook
     Dim gOutlook As Outlook.Application
     Dim gOutlookNS As Outlook.NameSpace
     Dim gInbox As Outlook.MAPIFolder
+    Dim gJunk As Outlook.MAPIFolder
     Dim gRouteTextFolder As Outlook.MAPIFolder
     Dim gNonRouteTextFolder As Outlook.MAPIFolder
     Dim gReportItemsFolder As Outlook.MAPIFolder
-
-    Private Const ROUTETEXT_FOLDERNAME = "RouteText_Forwarded"
-    Private Const NONROUTETEXT_FOLDERNAME = "RouteText_Unrecognized"
-    Private Const REPORTITEMS_FOLDERNAME = "RouteText_ReportItems"
 
 
     Function OutlookOpen() As Integer
@@ -46,7 +43,9 @@ Module RouteTextOutlook
                 gOutlookNS = gOutlook.GetNamespace("MAPI")
                 gOutlookNS.Logon("Outlook") ' Name of MAPI profile
                 gOutlookNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderInbox) ' Initialize MAPI
+
                 gInbox = gOutlookNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderInbox)
+                gJunk = gOutlookNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderJunk)
 
             Catch ex As Exception
 
@@ -109,29 +108,24 @@ Module RouteTextOutlook
 
         If lItems.Count > 0 Then
 
-            If lItems.Item(1).Class = Outlook.OlObjectClass.olMail Then ' only process MailItems
+            Select Case lItems.Item(1).Class
+                Case Outlook.OlObjectClass.olMail ' only process MailItems
+                    lMailItem = lItems.Item(1)
+                    If lMailItem.MessageClass = "IPM.Note" Then
+                        With lEmailMessage
+                            .MailItem = lMailItem
+                            .FromEmailAddress = lMailItem.SenderEmailAddress
+                            .SubjectLine = lMailItem.Subject
+                        End With
+                    End If
 
-                lMailItem = lItems.Item(1)
-                If lMailItem.MessageClass = "IPM.Note" Then
+                Case Outlook.OlObjectClass.olReport ' just file ReportItems
+                    lReportItem = lItems.Item(1)
+                    lReportItem.Move(gReportItemsFolder)
 
-                    With lEmailMessage
-
-                        .MailItem = lMailItem
-                        .FromEmailAddress = lMailItem.SenderEmailAddress
-                        .SubjectLine = lMailItem.Subject
-
-                    End With
-
-                End If
-
-            End If
-
-            If lItems.Item(1).Class = Outlook.OlObjectClass.olReport Then ' just file ReportItems
-
-                lReportItem = lItems.Item(1)
-                lReportItem.Move(gReportItemsFolder)
-
-            End If
+                Case Else
+                    ' TODO: not sure what to do. . .
+            End Select
 
         End If
 
@@ -144,37 +138,27 @@ Module RouteTextOutlook
     End Function
 
 
-    Public Function GetMailItem() As Outlook.MailItem
-
-        Dim lItems As Outlook.Items = gInbox.Items
-        Dim lItem As Outlook.MailItem
-
-        If lItems.Count > 0 Then
-            lItem = lItems.Item(1)
-        Else
-            lItem = Nothing
-        End If
-
-        GetMailItem = lItem
-
-    End Function
-
-
     Public Sub InitFolders()
 
         Try
-            gRouteTextFolder = gInbox.Folders(ROUTETEXT_FOLDERNAME) ' folder must be INSIDE Inbox folder
+            gRouteTextFolder = gInbox.Folders(gRouteTextFolderName) ' folder must be INSIDE Inbox folder
         Catch
+            LogMessage("*** ERROR *** InitFolders: Cannot find gRouteTextFolderName; using Junk")
+            gRouteTextFolder = gJunk
         End Try
 
         Try
-            gNonRouteTextFolder = gInbox.Folders(NONROUTETEXT_FOLDERNAME) ' folder must be INSIDE Inbox folder
+            gNonRouteTextFolder = gInbox.Folders(gNonRouteTextFolderName) ' folder must be INSIDE Inbox folder
         Catch
+            LogMessage("*** ERROR *** InitFolders: Cannot find gNonRouteTextFolderName; using Junk")
+            gRouteTextFolder = gJunk
         End Try
 
         Try
-            gReportItemsFolder = gInbox.Folders(REPORTITEMS_FOLDERNAME) ' folder must be INSIDE Inbox folder
+            gReportItemsFolder = gInbox.Folders(gReportItemsFolderName) ' folder must be INSIDE Inbox folder
         Catch
+            LogMessage("*** ERROR *** InitFolders: Cannot find gReportItemsFolderName; using Junk")
+            gRouteTextFolder = gJunk
         End Try
 
     End Sub
@@ -189,6 +173,8 @@ Module RouteTextOutlook
                 pMailItem.Move(gNonRouteTextFolder)
             End If
         Catch
+            LogMessage("*** ERROR *** FileMailItem: Cannot move mail to RouteText folder; deleting it")
+            pMailItem.Delete()
         End Try
 
     End Sub

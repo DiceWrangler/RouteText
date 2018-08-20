@@ -1,10 +1,5 @@
 ﻿Imports Outlook = Microsoft.Office.Interop.Outlook
 
-'
-' This app needs structural updates to be more like SendText
-' Specifically using an external configuration file for identifying the database server
-'
-
 Module RouteText
 
     Dim gShutdownRequested As Boolean
@@ -14,6 +9,9 @@ Module RouteText
     Dim gTestEmail As String
     Dim gAdminEmail As String
     Dim gOutput As String
+    Public gRouteTextFolderName As String
+    Public gNonRouteTextFolderName As String
+    Public gReportItemsFolderName As String
 
 
     Public Structure EmailMessage
@@ -58,7 +56,7 @@ Module RouteText
 
 
     Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180819"
+    Const APP_VERSION As String = "v180820"
 
     Const EMAIL_TO_USE_LIVE As String = "LIVE"
     Const EMAIL_TO_USE_TEST As String = "TEST"
@@ -202,7 +200,7 @@ MAIN_EXIT:
         Dim lForwardedMessage As Outlook.MailItem
 
         lForwardedMessage = pOriginalMessage.MailItem.Forward()
-        lForwardedMessage.Recipients.Add(gTestEmail)
+        lForwardedMessage.Recipients.Add(gAdminEmail)
         lForwardedMessage.Subject = "RouteText: Unknown Message Type"
 
         If (gOutput = OUTPUT_SEND) Then
@@ -286,6 +284,15 @@ MAIN_EXIT:
 
         gAdminEmail = GetAppConfig(APP_NAME, "Admin_Email", "dicewrangler@gmail.com")  ' Default to Scott Thorne's email address
         LogMessage("Config: Admin_Email=" & gAdminEmail)
+
+        gRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_SendText_Replies", "Junk Email")
+        LogMessage("Config: Folder_SendText_Replies=" & gRouteTextFolderName)
+
+        gNonRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_Unrecognized", "Junk Email")
+        LogMessage("Config: Folder_Unrecognized=" & gNonRouteTextFolderName)
+
+        gReportItemsFolderName = GetAppConfig(APP_NAME, "Folder_Reports", "Junk Email")
+        LogMessage("Config: Folder_Reports=" & gReportItemsFolderName)
 
         LogMessage(Strings.StrDup(57, "="))
 
