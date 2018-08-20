@@ -9,33 +9,35 @@ Module RouteTextOutlook
     Dim gInbox As Outlook.MAPIFolder
     Dim gRouteTextFolder As Outlook.MAPIFolder
     Dim gNonRouteTextFolder As Outlook.MAPIFolder
+    Dim gReportItemsFolder As Outlook.MAPIFolder
 
     Private Const ROUTETEXT_FOLDERNAME = "RouteText_Forwarded"
     Private Const NONROUTETEXT_FOLDERNAME = "RouteText_Unrecognized"
+    Private Const REPORTITEMS_FOLDERNAME = "RouteText_ReportItems"
 
 
     Function OutlookOpen() As Integer
 
         Dim lError As Integer = 0
 
-        'Try
-
-        '    gOutlook = DirectCast(Marshal.GetActiveObject("Outlook.Application.16"), Outlook.Application) ' Is there a current instance of Outlook 2016?
-
-        'Catch
-
         Try
 
-            gOutlook = New Outlook.Application ' If no then instantiate one
+            gOutlook = DirectCast(Marshal.GetActiveObject("Outlook.Application.16"), Outlook.Application) ' Is there a current instance of Outlook 2016?
 
-        Catch ex As Exception
+        Catch
 
-            lError = -1 ' Flag failure to open mail client
-            LogMessage("*** ERROR *** OutlookOpen.gOutlook: " & ex.ToString)
+            Try
+
+                gOutlook = New Outlook.Application ' If no then instantiate one
+
+            Catch ex As Exception
+
+                lError = -1 ' Flag failure to open mail client
+                LogMessage("*** ERROR *** OutlookOpen.gOutlook: " & ex.ToString)
+
+            End Try
 
         End Try
-
-        'End Try
 
         If lError = 0 Then
 
@@ -99,23 +101,35 @@ Module RouteTextOutlook
     Public Function GetMessage() As EmailMessage
 
         Dim lItems As Outlook.Items = gInbox.Items
-        Dim lItem As Outlook.MailItem
+        Dim lMailItem As Outlook.MailItem
+        Dim lReportItem As Outlook.ReportItem
         Dim lEmailMessage As EmailMessage
 
         lEmailMessage = Nothing
 
         If lItems.Count > 0 Then
 
-            lItem = lItems.Item(1)
-            If lItem.MessageClass = "IPM.Note" Then
+            If lItems.Item(1).Class = Outlook.OlObjectClass.olMail Then ' only process MailItems
 
-                With lEmailMessage
+                lMailItem = lItems.Item(1)
+                If lMailItem.MessageClass = "IPM.Note" Then
 
-                    .MailItem = lItem
-                    .FromEmailAddress = lItem.SenderEmailAddress
-                    .SubjectLine = lItem.Subject
+                    With lEmailMessage
 
-                End With
+                        .MailItem = lMailItem
+                        .FromEmailAddress = lMailItem.SenderEmailAddress
+                        .SubjectLine = lMailItem.Subject
+
+                    End With
+
+                End If
+
+            End If
+
+            If lItems.Item(1).Class = Outlook.OlObjectClass.olReport Then ' just file ReportItems
+
+                lReportItem = lItems.Item(1)
+                lReportItem.Move(gReportItemsFolder)
 
             End If
 
@@ -123,7 +137,8 @@ Module RouteTextOutlook
 
         GetMessage = lEmailMessage
 
-        lItem = Nothing
+        lMailItem = Nothing
+        lReportItem = Nothing
         lItems = Nothing
 
     End Function
@@ -152,9 +167,13 @@ Module RouteTextOutlook
         Catch
         End Try
 
-
         Try
             gNonRouteTextFolder = gInbox.Folders(NONROUTETEXT_FOLDERNAME) ' folder must be INSIDE Inbox folder
+        Catch
+        End Try
+
+        Try
+            gReportItemsFolder = gInbox.Folders(REPORTITEMS_FOLDERNAME) ' folder must be INSIDE Inbox folder
         Catch
         End Try
 

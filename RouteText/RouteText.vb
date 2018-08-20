@@ -181,7 +181,7 @@ MAIN_EXIT:
 
         lForwardedMessage.Recipients.Add(pSecurityUser.Email)
         lForwardedMessage.Subject = "RE: " & pOriginalMessage.SubjectLine
-        lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "===[ CONTEXT ]===" & vbCrLf & vbCrLf & pContext
+        lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & vbCrLf & "===[ CONTEXT ]===" & vbCrLf & vbCrLf & pContext
 
         If (gOutput = OUTPUT_SEND) Then
 
