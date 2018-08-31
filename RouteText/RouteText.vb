@@ -178,14 +178,16 @@ MAIN_EXIT:
 
         lForwardedMessage = pOriginalMessage.MailItem.Forward()
 
-        If pSecurityUser.Email > "" Then
+        If (pSecurityUser.ActiveEmployee = "Y") And (pSecurityUser.Email > "") Then
+
             If gEmailToUse = EMAIL_TO_USE_LIVE Then
                 lForwardedMessage.Recipients.Add(pSecurityUser.Email) ' use employee's email address
             Else
                 lForwardedMessage.Recipients.Add(gTestEmail) ' use test email address
             End If
+
         Else
-            lForwardedMessage.Recipients.Add(gAdminEmail) ' employee email address undefined, use administrator's email address
+            lForwardedMessage.Recipients.Add(gAdminEmail) ' if employee is in-active or employee email address is undefined then use administrator's email address
         End If
 
         lForwardedMessage.Subject = "RE: " & pOriginalMessage.SubjectLine
