@@ -56,7 +56,7 @@ Module RouteText
 
 
     Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180820"
+    Const APP_VERSION As String = "v180831"
 
     Const EMAIL_TO_USE_LIVE As String = "LIVE"
     Const EMAIL_TO_USE_TEST As String = "TEST"
@@ -73,6 +73,7 @@ Module RouteText
         If lError <> 0 Then GoTo MAIN_EXIT
 
         LoadAppConfigs() ' Subroutine just uses defaults if it fails for whatever reason
+        InitFolders()
 
         ShutdownRequestClear(APP_NAME)
         gShutdownRequested = False
@@ -156,8 +157,8 @@ MAIN_EXIT:
 
         lContext.Append(vbCrLf)
         lContext.Append(pSentMessage.BodyText & vbCrLf)
-
         lContext.Append(vbCrLf)
+
         lContext.Append("Tenant Name: " & pTenant.FullName & vbCrLf)
         lContext.Append("Cell Phone: " & pTenant.CellPhone & vbCrLf)
         lContext.Append("Primary Email: " & pTenant.PrimaryEmail & vbCrLf)
@@ -177,7 +178,16 @@ MAIN_EXIT:
 
         lForwardedMessage = pOriginalMessage.MailItem.Forward()
 
-        lForwardedMessage.Recipients.Add(pSecurityUser.Email)
+        If pSecurityUser.Email > "" Then
+            If gEmailToUse = EMAIL_TO_USE_LIVE Then
+                lForwardedMessage.Recipients.Add(pSecurityUser.Email) ' use employee's email address
+            Else
+                lForwardedMessage.Recipients.Add(gTestEmail) ' use test email address
+            End If
+        Else
+            lForwardedMessage.Recipients.Add(gAdminEmail) ' employee email address undefined, use administrator's email address
+        End If
+
         lForwardedMessage.Subject = "RE: " & pOriginalMessage.SubjectLine
         lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & vbCrLf & "===[ CONTEXT ]===" & vbCrLf & vbCrLf & pContext
 
@@ -204,14 +214,10 @@ MAIN_EXIT:
         lForwardedMessage.Subject = "RouteText: Unknown Message Type"
 
         If (gOutput = OUTPUT_SEND) Then
-
             lForwardedMessage.Send()
-
         Else
-
             lForwardedMessage.Save()
             lForwardedMessage.Close(Outlook.OlInspectorClose.olSave)
-
         End If
 
     End Sub
@@ -228,15 +234,7 @@ MAIN_EXIT:
         If lError <> 0 Then lAnyError = -1 'If we cannot open the database, flag the error but keep going in case there are more errors during initialization
 
         lError = OutlookOpen()
-        If lError = 0 Then
-
-            InitFolders()
-
-        Else
-
-            lAnyError = -1 'If we cannot open the mail client, flag the error but keep going in case there are more errors during initialization
-
-        End If
+        If lError <> 0 Then lAnyError = -1 'If we cannot open the mail client, flag the error but keep going in case there are more errors during initialization
 
         RouteTextStartup = lAnyError
 
@@ -285,13 +283,13 @@ MAIN_EXIT:
         gAdminEmail = GetAppConfig(APP_NAME, "Admin_Email", "dicewrangler@gmail.com")  ' Default to Scott Thorne's email address
         LogMessage("Config: Admin_Email=" & gAdminEmail)
 
-        gRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_SendText_Replies", "Junk Email")
+        gRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_SendText_Replies", "Junk")
         LogMessage("Config: Folder_SendText_Replies=" & gRouteTextFolderName)
 
-        gNonRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_Unrecognized", "Junk Email")
+        gNonRouteTextFolderName = GetAppConfig(APP_NAME, "Folder_Unrecognized", "Junk")
         LogMessage("Config: Folder_Unrecognized=" & gNonRouteTextFolderName)
 
-        gReportItemsFolderName = GetAppConfig(APP_NAME, "Folder_Reports", "Junk Email")
+        gReportItemsFolderName = GetAppConfig(APP_NAME, "Folder_Reports", "Junk")
         LogMessage("Config: Folder_Reports=" & gReportItemsFolderName)
 
         LogMessage(Strings.StrDup(57, "="))
