@@ -399,4 +399,36 @@ Module RouteTextDatabase
 
     End Function
 
+
+    Public Sub UpdateAppStatus(pAppStatus As String)
+
+        Dim lCmd As New SqlCommand
+
+        Try
+
+            lCmd = gDBConn.CreateCommand
+
+            lCmd.CommandText = "UpdateAppStatus"
+            lCmd.CommandType = CommandType.StoredProcedure
+
+            lCmd.Parameters.Add("@AppName", SqlDbType.Char)
+            lCmd.Parameters("@AppName").Value = APP_NAME
+            lCmd.Parameters.Add("@AppStatus", SqlDbType.Char)
+            lCmd.Parameters("@AppStatus").Value = pAppStatus
+
+            lCmd.ExecuteNonQuery()
+
+        Catch ex As Exception
+
+            LogMessage("*** ERROR *** UpdateAppStatus: " & ex.ToString)
+
+        Finally
+
+            lCmd.Dispose()
+            lCmd = Nothing
+
+        End Try
+
+    End Sub
+
 End Module

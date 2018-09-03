@@ -13,6 +13,8 @@ Module RouteText
     Public gNonRouteTextFolderName As String
     Public gReportItemsFolderName As String
 
+    Public Const APP_NAME As String = "RouteText"
+    Const APP_VERSION As String = "v180831"
 
     Public Structure EmailMessage
 
@@ -55,14 +57,15 @@ Module RouteText
     End Structure
 
 
-    Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180831"
-
     Const EMAIL_TO_USE_LIVE As String = "LIVE"
     Const EMAIL_TO_USE_TEST As String = "TEST"
 
     Const OUTPUT_SEND As String = "SEND"
     Const OUTPUT_DRAFT As String = "DRAFT"
+
+    Const APP_STATUS_START As String = "Starting"
+    Const APP_STATUS_HEARTBEAT As String = "Running"
+    Const APP_STATUS_SHUTDOWN As String = "Stopping"
 
 
     Sub Main()
@@ -238,6 +241,8 @@ MAIN_EXIT:
         lError = OutlookOpen()
         If lError <> 0 Then lAnyError = -1 'If we cannot open the mail client, flag the error but keep going in case there are more errors during initialization
 
+        UpdateAppStatus(APP_STATUS_START)
+
         RouteTextStartup = lAnyError
 
     End Function
@@ -246,6 +251,7 @@ MAIN_EXIT:
     Sub RouteTextShutdown()
 
         LogMessage(APP_NAME & ": Shutting down")
+        UpdateAppStatus(APP_STATUS_SHUTDOWN)
 
         OutlookClose()
         DBClose()
@@ -314,6 +320,8 @@ MAIN_EXIT:
         Console.Write(".")
         gHeartbeat = (gHeartbeat + 1) Mod 80
         If gHeartbeat = 0 Then Console.WriteLine() ' Line break after 80 characters
+
+        UpdateAppStatus(APP_STATUS_HEARTBEAT)
 
     End Sub
 
