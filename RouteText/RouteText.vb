@@ -184,17 +184,22 @@ MAIN_EXIT:
         If (pSecurityUser.ActiveEmployee = "Y") And (pSecurityUser.Email > "") Then
 
             If gEmailToUse = EMAIL_TO_USE_LIVE Then
-                lForwardedMessage.Recipients.Add(pSecurityUser.Email) ' use employee's email address
+                lForwardedMessage.Recipients.Add(pSecurityUser.Email) ' use active employee's email address
             Else
                 lForwardedMessage.Recipients.Add(gTestEmail) ' use test email address
             End If
 
         Else
+
             lForwardedMessage.Recipients.Add(gAdminEmail) ' if employee is in-active or employee email address is undefined then use administrator's email address
+
+            If (pSecurityUser.ActiveEmployee <> "Y") Then lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "Forwarding Reason: Inactive Employee" & vbCrLf
+            If (pSecurityUser.Email = "") Then lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "Forwarding Reason: Missing Email Address" & vbCrLf
+
         End If
 
         lForwardedMessage.Subject = "RE: " & pOriginalMessage.SubjectLine
-        lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & vbCrLf & "===[ CONTEXT ]===" & vbCrLf & vbCrLf & pContext
+        lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & vbCrLf & "===[ Original Mesage ]===" & vbCrLf & vbCrLf & pContext
 
         If (gOutput = OUTPUT_SEND) Then
 
