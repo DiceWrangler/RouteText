@@ -99,6 +99,7 @@ MAIN_EXIT:
     Sub MainLoop()
 
         Dim lMessage As EmailMessage
+        Dim lSenderEmailAddress As String
         Dim lLastMessage As SentMessage
         Dim lTenant As Tenant
         Dim lAsset As Asset
@@ -109,7 +110,10 @@ MAIN_EXIT:
 
         If lMessage.FromEmailAddress > "" Then
 
-            lLastMessage = GetLastSentMessageByEmail(lMessage.FromEmailAddress)
+            lSenderEmailAddress = lMessage.FromEmailAddress
+            lSenderEmailAddress = lSenderEmailAddress.Replace("+1", "")  ' strip leading "long distance" prefix
+            lSenderEmailAddress = Left(lSenderEmailAddress, InStr(lSenderEmailAddress, "@") - 1) ' strip email domain
+            lLastMessage = GetLastSentMessageByEmail(lSenderEmailAddress)
 
             If lLastMessage.MessageID > 0 Then
 

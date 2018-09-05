@@ -99,18 +99,32 @@ Module RouteTextOutlook
 
     Public Function GetMessage() As EmailMessage
 
-        Dim lItems As Outlook.Items = gInbox.Items
+        Dim lItems As Outlook.Items
         Dim lMailItem As Outlook.MailItem
         Dim lReportItem As Outlook.ReportItem
         Dim lEmailMessage As EmailMessage
+        'Dim lReportString As String
+        'Dim lStartPosition, lEndPosition As Integer
+        'Dim lOriginalRecipient As String
 
         lEmailMessage = Nothing
 
+        lItems = gInbox.Items
+
+        ' *** TEST ***
+        'Dim gTestFolder As Outlook.MAPIFolder
+        'gTestFolder = gInbox.Folders("RouteText_TEST")
+        'lItems = gTestFolder.Items
+        ' ^^^ TEST ^^^
+
         If lItems.Count > 0 Then
 
-            Select Case lItems.Item(1).Class
-                Case Outlook.OlObjectClass.olMail ' only process MailItems
+            Select Case lItems.Item(1).Class  ' only process first item in folder
+
+                Case Outlook.OlObjectClass.olMail  ' only process MailItems
+
                     lMailItem = lItems.Item(1)
+
                     If lMailItem.MessageClass = "IPM.Note" Then
                         With lEmailMessage
                             .MailItem = lMailItem
@@ -119,12 +133,27 @@ Module RouteTextOutlook
                         End With
                     End If
 
-                Case Outlook.OlObjectClass.olReport ' just file ReportItems
-                    lReportItem = lItems.Item(1)
-                    lReportItem.Move(gReportItemsFolder)
+                Case Outlook.OlObjectClass.olReport  ' just file ReportItems for now; an Outlook rule might have caught this anyway
+
+                    Try
+                        lReportItem = lItems.Item(1)
+                        lReportItem.Move(gReportItemsFolder)
+                    Catch
+                        LogMessage("*** ERROR *** GetMessage: Could not move ReportItem to folder; deleting it")
+                        lItems.Item(1).Delete()
+                    End Try
+
+                    ' SAVE: Possible code snippet for parsing HTML Outlook report to extract original email address
+                    'lReportString = Text.Encoding.ASCII.GetString(Text.Encoding.Unicode.GetBytes(lItems.Item(1).Body))
+                    'lStartPosition = InStr(lReportString, "To: ") + 4
+                    'lEndPosition = InStr(lStartPosition, lReportString, vbCrLf) - lStartPosition
+                    'lOriginalRecipient = Mid(lReportString, lStartPosition, lEndPosition)
 
                 Case Else
-                    ' TODO: not sure what to do. . .
+
+                    ' TODO: not sure what else to do. . .
+                    lItems.Item(1).Move(gReportItemsFolder)
+
             End Select
 
         End If
@@ -143,21 +172,21 @@ Module RouteTextOutlook
         Try
             gRouteTextFolder = gInbox.Folders(gRouteTextFolderName) ' folder must be INSIDE Inbox folder
         Catch
-            LogMessage("*** ERROR *** InitFolders: Cannot find gRouteTextFolderName; using Junk")
+            LogMessage("*** ERROR *** InitFolders: Could not find gRouteTextFolderName; using Junk")
             gRouteTextFolder = gJunk
         End Try
 
         Try
             gNonRouteTextFolder = gInbox.Folders(gNonRouteTextFolderName) ' folder must be INSIDE Inbox folder
         Catch
-            LogMessage("*** ERROR *** InitFolders: Cannot find gNonRouteTextFolderName; using Junk")
+            LogMessage("*** ERROR *** InitFolders: Could not find gNonRouteTextFolderName; using Junk")
             gRouteTextFolder = gJunk
         End Try
 
         Try
             gReportItemsFolder = gInbox.Folders(gReportItemsFolderName) ' folder must be INSIDE Inbox folder
         Catch
-            LogMessage("*** ERROR *** InitFolders: Cannot find gReportItemsFolderName; using Junk")
+            LogMessage("*** ERROR *** InitFolders: Could not find gReportItemsFolderName; using Junk")
             gRouteTextFolder = gJunk
         End Try
 
@@ -173,7 +202,7 @@ Module RouteTextOutlook
                 pMailItem.Move(gNonRouteTextFolder)
             End If
         Catch
-            LogMessage("*** ERROR *** FileMailItem: Cannot move mail to RouteText folder; deleting it")
+            LogMessage("*** ERROR *** FileMailItem: Could not move message to a RouteText folder; deleting it")
             pMailItem.Delete()
         End Try
 
