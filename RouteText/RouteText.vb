@@ -14,7 +14,7 @@ Module RouteText
     Public gReportItemsFolderName As String
 
     Public Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180903"
+    Const APP_VERSION As String = "v180905"
 
     Public Structure EmailMessage
 
