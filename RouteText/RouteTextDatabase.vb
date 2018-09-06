@@ -121,8 +121,9 @@ Module RouteTextDatabase
                     .SentTime = lReader.GetDateTime(4)
                     .TenantID = lReader.GetInt32(5)
                     .AssetID = lReader.GetInt32(6)
-                    .SubjectLine = lReader.GetString(7)
-                    .BodyText = lReader.GetString(8)
+                    .TextToEmail = lReader.GetString(7)
+                    .SubjectLine = lReader.GetString(8)
+                    .BodyText = lReader.GetString(9)
 
                 End With
 

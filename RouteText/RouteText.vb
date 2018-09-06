@@ -32,6 +32,7 @@ Module RouteText
         Public SentTime As DateTime
         Public TenantID As Integer
         Public AssetID As Integer
+        Public TextToEmail As String
         Public SubjectLine As String
         Public BodyText As String
     End Structure
