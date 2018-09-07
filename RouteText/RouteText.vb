@@ -14,7 +14,7 @@ Module RouteText
     Public gReportItemsFolderName As String
 
     Public Const APP_NAME As String = "RouteText"
-    Const APP_VERSION As String = "v180905"
+    Const APP_VERSION As String = "v180906"
 
     Public Structure EmailMessage
 
@@ -113,7 +113,7 @@ MAIN_EXIT:
 
             lSenderEmailAddress = lMessage.FromEmailAddress
             lSenderEmailAddress = lSenderEmailAddress.Replace("+1", "")  ' strip leading "long distance" prefix
-            lSenderEmailAddress = Left(lSenderEmailAddress, InStr(lSenderEmailAddress, "@") - 1) ' strip email domain
+            lSenderEmailAddress = Left(lSenderEmailAddress, InStr(lSenderEmailAddress & "@", "@") - 1) ' strip email domain if present
             lLastMessage = GetLastSentMessageByEmail(lSenderEmailAddress)
 
             If lLastMessage.MessageID > 0 Then
@@ -170,6 +170,7 @@ MAIN_EXIT:
         lContext.Append("Tenant Name: " & pTenant.FullName & vbCrLf)
         lContext.Append("Cell Phone: " & pTenant.CellPhone & vbCrLf)
         lContext.Append("Primary Email: " & pTenant.PrimaryEmail & vbCrLf)
+        lContext.Append("TextTo Email: " & pSentMessage.TextToEmail & vbCrLf)
 
         lContext.Append(vbCrLf)
         lContext.Append("Property: " & pAsset.PropertyDesc & vbCrLf)
@@ -199,7 +200,7 @@ MAIN_EXIT:
             lForwardedMessage.Recipients.Add(gAdminEmail) ' if employee is in-active or employee email address is undefined then use administrator's email address
 
             If (pSecurityUser.ActiveEmployee <> "Y") Then lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "Forwarding Reason: Inactive Employee" & vbCrLf
-            If (pSecurityUser.Email = "") Then lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "Forwarding Reason: Missing Email Address" & vbCrLf
+            If (pSecurityUser.Email = "") Then lForwardedMessage.Body = lForwardedMessage.Body & vbCrLf & "Forwarding Reason: Employee Missing Email Address" & vbCrLf
 
         End If
 

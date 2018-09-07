@@ -135,13 +135,15 @@ Module RouteTextOutlook
 
                 Case Outlook.OlObjectClass.olReport  ' just file ReportItems for now; an Outlook rule might have caught this anyway
 
-                    Try
-                        lReportItem = lItems.Item(1)
-                        lReportItem.Move(gReportItemsFolder)
-                    Catch
-                        LogMessage("*** ERROR *** GetMessage: Could not move ReportItem to folder; deleting it")
-                        lItems.Item(1).Delete()
-                    End Try
+                    ' DO NOTHING, let Outlook rule "Undeliverable" forward and file this item
+
+                    'Try
+                    '    lReportItem = lItems.Item(1)
+                    '    lReportItem.Move(gReportItemsFolder)
+                    'Catch
+                    '    LogMessage("*** ERROR *** GetMessage: Could not move ReportItem to folder; deleting it")
+                    '    lItems.Item(1).Delete()
+                    'End Try
 
                     ' SAVE: Possible code snippet for parsing HTML Outlook report to extract original email address
                     'lReportString = Text.Encoding.ASCII.GetString(Text.Encoding.Unicode.GetBytes(lItems.Item(1).Body))
