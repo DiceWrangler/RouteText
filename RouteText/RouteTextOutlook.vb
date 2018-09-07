@@ -108,6 +108,8 @@ Module RouteTextOutlook
     Public Function GetMessage() As EmailMessage
 
         Dim lItems As Outlook.Items
+        Dim lItemPresent As Boolean
+        Dim lItem As New Object
         Dim lMailItem As Outlook.MailItem
         Dim lReportItem As Outlook.ReportItem
         Dim lEmailMessage As EmailMessage
@@ -117,22 +119,30 @@ Module RouteTextOutlook
 
         lEmailMessage = Nothing
 
-        lItems = gInbox.Items
-
         ' *** TEST ***
         'Dim gTestFolder As Outlook.MAPIFolder
         'gTestFolder = gInbox.Folders("RouteText_TEST")
         'lItems = gTestFolder.Items
         ' ^^^ TEST ^^^
 
-        If lItems.Count > 0 Then
+        Try
+            lItems = gInbox.Items
+            lItemPresent = (lItems.Count > 0)
+            If lItemPresent Then lItem = lItems.Item(1) ' only process first item in folder
 
-            Select Case lItems.Item(1).Class  ' only process first item in folder
+        Catch ex As Exception
+            LogMessage("*** ERROR *** GetMessage.Items: " & ex.ToString)
+            lItemPresent = False
+        End Try
+
+        If lItemPresent Then
+
+            Select Case lItem.Class
 
                 Case Outlook.OlObjectClass.olMail  ' only process MailItems
 
                     Try
-                        lMailItem = lItems.Item(1)
+                        lMailItem = lItem
 
                         If lMailItem.MessageClass = "IPM.Note" Then
                             With lEmailMessage
@@ -171,7 +181,7 @@ Module RouteTextOutlook
 
                     Try
                         ' TODO: not sure what else to do. . .
-                        lItems.Item(1).Move(gReportItemsFolder)
+                        lItem.Move(gReportItemsFolder)
 
                     Catch ex As Exception
                         LogMessage("*** ERROR *** GetMessage.else: " & ex.ToString)
@@ -186,6 +196,7 @@ Module RouteTextOutlook
 
         lMailItem = Nothing
         lReportItem = Nothing
+        lItem = Nothing
         lItems = Nothing
 
     End Function
