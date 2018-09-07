@@ -73,9 +73,10 @@ Module RouteTextOutlook
             lSync = gOutlookNS.SyncObjects.Item(1)
             lSync.Start
 
-        Catch
+        Catch ex As Exception
 
             ' If we can't Send/Receive then don't worry about it because it will happen eventually anyway
+            LogMessage("*** ERROR *** OutlookFlush: " & ex.ToString)
 
         Finally
 
@@ -88,11 +89,18 @@ Module RouteTextOutlook
 
     Sub OutlookClose()
 
-        gOutlookNS.Logoff()
-        gOutlook.Quit()
+        Try
+            gOutlookNS.Logoff()
+            gOutlook.Quit()
 
-        gOutlookNS = Nothing
-        gOutlook = Nothing
+        Catch ex As Exception
+            LogMessage("*** ERROR *** OutlookClose: " & ex.ToString)
+
+        Finally
+            gOutlookNS = Nothing
+            gOutlook = Nothing
+
+        End Try
 
     End Sub
 
@@ -123,19 +131,27 @@ Module RouteTextOutlook
 
                 Case Outlook.OlObjectClass.olMail  ' only process MailItems
 
-                    lMailItem = lItems.Item(1)
+                    Try
+                        lMailItem = lItems.Item(1)
 
-                    If lMailItem.MessageClass = "IPM.Note" Then
-                        With lEmailMessage
-                            .MailItem = lMailItem
-                            .FromEmailAddress = lMailItem.SenderEmailAddress
-                            .SubjectLine = lMailItem.Subject
-                        End With
-                    End If
+                        If lMailItem.MessageClass = "IPM.Note" Then
+                            With lEmailMessage
+                                .MailItem = lMailItem
+                                .FromEmailAddress = lMailItem.SenderEmailAddress
+                                .SubjectLine = lMailItem.Subject
+                            End With
+                        End If
+
+                    Catch ex As Exception
+                        LogMessage("*** ERROR *** GetMessage.olMail: " & ex.ToString)
+                        lEmailMessage = Nothing ' just in case it is partially initialized
+
+                    End Try
 
                 Case Outlook.OlObjectClass.olReport  ' just file ReportItems for now; an Outlook rule might have caught this anyway
 
                     ' DO NOTHING, let Outlook rule "Undeliverable" forward and file this item
+                    Exit Select
 
                     'Try
                     '    lReportItem = lItems.Item(1)
@@ -153,8 +169,14 @@ Module RouteTextOutlook
 
                 Case Else
 
-                    ' TODO: not sure what else to do. . .
-                    lItems.Item(1).Move(gReportItemsFolder)
+                    Try
+                        ' TODO: not sure what else to do. . .
+                        lItems.Item(1).Move(gReportItemsFolder)
+
+                    Catch ex As Exception
+                        LogMessage("*** ERROR *** GetMessage.else: " & ex.ToString)
+
+                    End Try
 
             End Select
 
@@ -203,9 +225,15 @@ Module RouteTextOutlook
             Else
                 pMailItem.Move(gNonRouteTextFolder)
             End If
-        Catch
-            LogMessage("*** ERROR *** FileMailItem: Could not move message to a RouteText folder; deleting it")
-            pMailItem.Delete()
+
+        Catch ex As Exception
+            LogMessage("*** ERROR *** FileMailItem: Could not move message to a RouteText folder. " & ex.ToString)
+
+            Try
+                pMailItem.Delete() ' if we can't file it then just delete it
+            Catch ex2 As Exception
+                LogMessage("*** ERROR *** FileMailItem: Could not delete message. " & ex2.ToString)
+            End Try
         End Try
 
     End Sub
