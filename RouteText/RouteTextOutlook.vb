@@ -129,7 +129,6 @@ Module RouteTextOutlook
             lItems = gInbox.Items
             lItemPresent = (lItems.Count > 0)
             If lItemPresent Then lItem = lItems.Item(1) ' only process first item in folder
-
         Catch ex As Exception
             LogMessage("*** ERROR *** GetMessage.Items: " & ex.ToString)
             lItemPresent = False
@@ -144,13 +143,18 @@ Module RouteTextOutlook
                     Try
                         lMailItem = lItem
 
-                        If lMailItem.MessageClass = "IPM.Note" Then
-                            With lEmailMessage
-                                .MailItem = lMailItem
-                                .FromEmailAddress = lMailItem.SenderEmailAddress
-                                .SubjectLine = lMailItem.Subject
-                            End With
-                        End If
+                        Select Case lMailItem.MessageClass
+                            Case "IPM.Note"
+                                With lEmailMessage
+                                    .MailItem = lMailItem
+                                    .FromEmailAddress = lMailItem.SenderEmailAddress
+                                    .SubjectLine = lMailItem.Subject
+                                End With
+
+                            Case "IPM.Note.Rules.OofTemplate.Microsoft"
+                                ' DO NOTHING, let the Outlook rule "Automatic Reply" process this
+                                Exit Select
+                        End Select
 
                     Catch ex As Exception
                         LogMessage("*** ERROR *** GetMessage.olMail: " & ex.ToString)
@@ -158,24 +162,9 @@ Module RouteTextOutlook
 
                     End Try
 
-                Case Outlook.OlObjectClass.olReport  ' just file ReportItems for now; an Outlook rule might have caught this anyway
-
-                    ' DO NOTHING, let Outlook rule "Undeliverable" forward and file this item
+                Case Outlook.OlObjectClass.olReport
+                    ' DO NOTHING, let Outlook rule "Undeliverable" process this
                     Exit Select
-
-                    'Try
-                    '    lReportItem = lItems.Item(1)
-                    '    lReportItem.Move(gReportItemsFolder)
-                    'Catch
-                    '    LogMessage("*** ERROR *** GetMessage: Could not move ReportItem to folder; deleting it")
-                    '    lItems.Item(1).Delete()
-                    'End Try
-
-                    ' SAVE: Possible code snippet for parsing HTML Outlook report to extract original email address
-                    'lReportString = Text.Encoding.ASCII.GetString(Text.Encoding.Unicode.GetBytes(lItems.Item(1).Body))
-                    'lStartPosition = InStr(lReportString, "To: ") + 4
-                    'lEndPosition = InStr(lStartPosition, lReportString, vbCrLf) - lStartPosition
-                    'lOriginalRecipient = Mid(lReportString, lStartPosition, lEndPosition)
 
                 Case Else
 
